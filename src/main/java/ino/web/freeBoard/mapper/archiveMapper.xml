@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ino.web.freeBoard.mapper.ArchiveMapper">
+
+
+	<select id="archiveGetList" resultType="ino.web.freeBoard.dto.ArchiveDto">
+		<![CDATA[
+		SELECT *
+			FROM (
+				SELECT
+					ROWNUM rn, NUM, TITLE, NAME, TO_CHAR(REGDATE, 'YYYY/MM/DD') REGDATE, CONTENT
+				FROM 
+					( SELECT NUM, TITLE, NAME, REGDATE, CONTENT
+					FROM
+						ARCHIVE
+						ORDER BY
+							NUM DESC
+							)
+							
+		WHERE
+            ROWNUM <= #{pageNum, jdbcType=INTEGER} * #{amount, jdbcType=INTEGER}
+    )
+   		WHERE
+        	rn > (#{pageNum, jdbcType=INTEGER} - 1) * #{amount, jdbcType=INTEGER}
+    ]]>
+	</select>
+
+		 
+	<insert id="archiveInsertPro" parameterType="ino.web.freeBoard.dto.ArchiveDto">
+    <selectKey keyProperty="num" resultType="int" order="BEFORE">
+        SELECT ARCHIVENUM_SEQ.NEXTVAL FROM DUAL
+    </selectKey>
+    INSERT INTO "ADMIN"."ARCHIVE" 
+        ("NUM", "NAME", "TITLE", "CONTENT", "REGDATE", "FILELOAD")
+    VALUES  
+        (#{num, jdbcType=INTEGER}, #{name}, #{title}, #{content}, SYSDATE, 
+        <choose>
+            <when test="fileLoad != null and fileLoad != ''">
+                #{fileLoad, jdbcType=VARCHAR}
+            </when>
+            <otherwise>
+                NULL
+            </otherwise>
+        </choose>)
+	</insert>
+
+
+
+
+
+	
+	
+
+	<select id="getArchiveTotalCount" resultType="int">
+		SELECT
+			COUNT(*)
+		FROM
+			"ADMIN"."ARCHIVE"
+		<where>
+			<choose>
+				<when test='type == "title"'>
+					AND TITLE LIKE '%' || #{keyword, jdbcType=VARCHAR} || '%'
+				</when>
+				<when test='type == "name"'>
+					AND NAME LIKE '%' || #{keyword, jdbcType=VARCHAR} || '%'
+				</when>
+			</choose>
+		</where>
+	</select>
+
+
+
+	<select id="searchArchiveListByType" resultType="ino.web.freeBoard.dto.ArchiveDto">
+
+		SELECT *
+    FROM (
+        SELECT
+            ROWNUM rn , NUM, TITLE, NAME, TO_CHAR(REGDATE, 'YYYY/MM/DD') REGDATE, CONTENT
+        FROM 
+            ( SELECT NUM, TITLE, NAME, REGDATE, CONTENT
+            FROM
+                "ADMIN"."ARCHIVE" 
+            WHERE
+        <choose>
+    	<when test='type == "title"'>
+        	TITLE LIKE '%'|| #{keyword, jdbcType=VARCHAR}|| '%'
+    	</when>
+    	<when test='type == "name"'>
+       		NAME LIKE '%' || #{keyword, jdbcType=VARCHAR}|| '%'
+    	</when>
+		</choose>
+                
+            ORDER BY
+                NUM DESC
+    
+    )
+	<![CDATA[							
+		WHERE
+            ROWNUM <= #{pageNum, jdbcType=INTEGER} * #{amount, jdbcType=INTEGER}
+    )
+   		WHERE
+        	rn > (#{pageNum, jdbcType=INTEGER} - 1) * #{amount, jdbcType=INTEGER}
+    ]]>
+</select>
+
+	<select id="archiveDetailByNum" resultType="archiveDto" parameterType="int">
+		SELECT 
+			*
+		FROM 
+			"ADMIN"."ARCHIVE"
+		WHERE 
+			NUM=#{num}
+	</select>
+
+
+	<update id="archiveUpdate"  parameterType="ino.web.freeBoard.dto.ArchiveDto">
+    UPDATE admin.archive
+    SET
+        NAME = #{name, jdbcType=VARCHAR},
+        CONTENT = #{content, jdbcType=VARCHAR},
+        REGDATE = 
+        	SYSDATE,
+       FILELOAD = #{fileLoad, jdbcType=VARCHAR}
+       
+    	WHERE
+			NUM = #{num, jdbcType=INTEGER}
+	</update>
+
+
+
+	<delete id="archiveDelete" parameterType="int">
+		DELETE 
+		FROM 
+			ARCHIVE
+		WHERE 
+			NUM = #{num, jdbcType=INTEGER}
+	</delete>
+
+	<update id="archiveNumAfterDelete" parameterType="int">
+		UPDATE
+			ARCHIVE
+		SET 
+			NUM = NUM - 1
+		WHERE 
+			NUM > #{num, jdbcType=INTEGER}
+	</update>
+
+	<update id="archiveFileDelete" parameterType="ino.web.freeBoard.dto.ArchiveDto">
+    UPDATE 
+        ARCHIVE
+    SET 
+        FILELOAD = NULL
+    WHERE 
+        NUM = #{num, jdbcType=INTEGER}
+	</update>
+
+
+</mapper>

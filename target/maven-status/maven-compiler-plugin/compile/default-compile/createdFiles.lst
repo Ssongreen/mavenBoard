@@ -1,0 +1,4 @@
+ino\web\freeBoard\mapper\FreeBoardMapper.class
+ino\web\freeBoard\controller\FreeBoardController.class
+ino\web\freeBoard\dto\FreeBoardDto.class
+ino\web\freeBoard\service\FreeBoardService.class
